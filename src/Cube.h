@@ -40,13 +40,15 @@ public:
 	bool isOnSlope = false;
 	bool isGoingUp = true;
 
-	Cube(SDL_Renderer* renderer, const Vec2& pos, double angle);
+	Cube(SDL_Renderer* renderer, const Vec2& pos, float angle);
 	~Cube();
 	const SDL_Rect* GetRect();
 	void Render(SDL_Renderer* renderer);
 	void Move(float dt);
 	void Update();
+	void AlignToFloor(Vec2 floor_vertex);
 
-	void Restart();
+	//void Restart();
+
 };
 
