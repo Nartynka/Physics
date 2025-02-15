@@ -1,6 +1,5 @@
 #include <SDL.h>
 #include <SDL_image.h>
-//#include <SDL_ttf.h>
 #include <iostream>
 #include <cassert>
 
@@ -15,15 +14,16 @@ const int SCREEN_HEIGHT = 720;
 
 const float gravity = 9.81f;
 
+// Walls
 struct Rect
 {
 	Vec2 m_start;
 	Vec2 m_end;
-	Vec2 m_vertices[4];
+	Vec2 m_vertices[4]{};
 	int m_thicknes = 5;
-	double m_angle;
+	double m_angle{};
 
-	Vec2 pos;
+	Vec2 pos{};
 
 	Rect(const Vec2& start, const Vec2& end) : m_start(start), m_end(end)
 	{
@@ -47,10 +47,10 @@ struct Rect
 	}
 };
 
+// Floor / Inclined Plane
 struct Triangle
 {
-	Vec2 m_pos;
-	Vec2 m_vertices[3];
+	Vec2 m_vertices[3]{};
 	float m_angle;
 	
 	// Start & end point and an angle
@@ -99,32 +99,24 @@ void Restart(const UI::Options& opt, Cube* cube, Triangle& floor, Rect* wall)
 	wall->m_start = { floor.m_vertices[1].x, 0 };
 	wall->m_end = { floor.m_vertices[1].x, SCREEN_HEIGHT };
 
-	cube->vel = opt.vel * -10.f;
 	cube->angle = opt.angle;
 	cube->frictionCoeff = opt.friction;
 	cube->mass = opt.mass;
+	cube->vel = opt.vel * -10.f;
 	cube->AlignToFloor(floor.m_vertices[1]);
-	//cube->start_pos = cube->pos;
-
-	//cube->start_pos = { floor.m_vertices[1].x - 64 * 2 * cube->forward.x - 64 * 2 * cube->up.x, floor.m_vertices[1].y + 64 * 3 * cube->forward.y + 64 * 4.5f * cube->up.y };
-	//cube->Restart();
 
 }
 
 
 int main(int argc, char* args[])
 {
-	float dt = (float)(SDL_GetTicks() / 1000.f);
+	auto dt = (float)(SDL_GetTicks() / 1000.f);
 	float lastTime = 0.f;
-	//float prevdt = dt;
 	// @TODO: FPS capping can cause some issues with physics
 	const float DESIRED_DT = 1 / 120.f; // 120 FPS
 
 	int result = SDL_Init(SDL_INIT_VIDEO);
 	assert(result == 0 && "SDL could not initialize!");
-	
-	//result = TTF_Init();
-	//assert(result != -1 && "SDL_ttf could not initialize!");
 
 	SDL_Window* window = SDL_CreateWindow("Fizyka", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	assert(window != nullptr && "Window could not be created!");
@@ -140,15 +132,13 @@ int main(int argc, char* args[])
 	float angle = 30;
 	Triangle floor({ 10, SCREEN_HEIGHT - 10 }, { SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10 }, angle);
 
-	// main cube
+	Rect wall = { {floor.m_vertices[1].x, 0}, {floor.m_vertices[1].x, SCREEN_HEIGHT}};
+	Rect wall2 = { {5, 0}, {5, SCREEN_HEIGHT}};
+
 	Cube cube(renderer, {0, 0}, angle);
-
 	cube.AlignToFloor(floor.m_vertices[1]);
-
 	cube.mass = 1;
-
 	cube.vel = -500.f;
-	
 	cube.frictionCoeff = 0.1f;
 
 	UI::Options options;
@@ -158,8 +148,6 @@ int main(int argc, char* args[])
 	options.vel = cube.vel / -10.f;
 	options.friction = cube.frictionCoeff;
 
-	Rect wall = { {floor.m_vertices[1].x, 0}, {floor.m_vertices[1].x, SCREEN_HEIGHT}};
-	Rect wall2 = { {5, 0}, {5, SCREEN_HEIGHT}};
 
 	while (!quit)
 	{
@@ -186,6 +174,7 @@ int main(int argc, char* args[])
 
 			cube.Move(dt);
 
+			// collision with floor
 			if (CheckCollision(renderer, cube.vertices, 4, floor.m_vertices, 3))
 			{
 				//Vec2 delta = cube.pos - cube.prev_pos;
@@ -194,6 +183,7 @@ int main(int argc, char* args[])
 				//cube.center -= delta;
 			}
 
+			// collision with wall on the right
 			if (CheckCollision(renderer, cube.vertices, 4, wall.m_vertices, 4))
 			{
 				cube.vel *= -1;
@@ -203,7 +193,7 @@ int main(int argc, char* args[])
 				cube.center -= delta;
 			}
 
-			// wall on the left
+			// collision with wall on the left
 			if (CheckCollision(renderer, cube.vertices, 4, wall2.m_vertices, 4))
 			{
 				cube.vel *= -1;
@@ -226,7 +216,6 @@ int main(int argc, char* args[])
 			SDL_RenderClear(renderer);
 
 			lastTime = (float)SDL_GetTicks();
-			//prevdt = dt;
 		}
 	}
 
