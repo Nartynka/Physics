@@ -41,8 +41,8 @@ struct Rect
 
 		for (int i = 0; i < m_thicknes; i++)
 		{
-			SDL_RenderDrawLine(renderer, m_start.x, m_start.y+i, m_end.x, m_end.y+i);
-			SDL_RenderDrawLine(renderer, m_start.x+i, m_start.y, m_end.x+i, m_end.y);
+			SDL_RenderDrawLine(renderer, (int)m_start.x, (int)m_start.y+i, (int)m_end.x, (int)m_end.y+i);
+			SDL_RenderDrawLine(renderer, (int)m_start.x+i, (int)m_start.y, (int)m_end.x+i, (int)m_end.y);
 		}
 	}
 };
@@ -51,16 +51,16 @@ struct Triangle
 {
 	Vec2 m_pos;
 	Vec2 m_vertices[3];
-	double m_angle;
+	float m_angle;
 	
 	// Start & end point and an angle
-	Triangle(const Vec2& start, const Vec2& end, double angle) : m_angle(angle)
+	Triangle(const Vec2& start, const Vec2& end, float angle) : m_angle(angle)
 	{
 		m_vertices[1] = end;
 		m_vertices[2] = start;
 
 		float length = sqrt((end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y));
-		length = length * tan(Deg2Rad(m_angle));
+		length = length * tanf(Deg2Radf(m_angle));
 
 		m_vertices[0] = { start.x, start.y - length };
 	}
@@ -69,7 +69,7 @@ struct Triangle
 	void Update()
 	{
 		float length = sqrt((m_vertices[1].x - m_vertices[2].x) * (m_vertices[1].x - m_vertices[2].x) + (m_vertices[1].y - m_vertices[2].y) * (m_vertices[1].y - m_vertices[2].y));
-		length = length * tan(Deg2Rad(m_angle));
+		length = length * tanf(Deg2Radf(m_angle));
 
 		m_vertices[0] = { m_vertices[2].x, m_vertices[2].y - length };
 	}
@@ -78,28 +78,28 @@ struct Triangle
 	{
 		// hypotenuse - magenta
 		SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
-		SDL_RenderDrawLine(renderer, m_vertices[0].x, m_vertices[0].y, m_vertices[1].x, m_vertices[1].y);
+		SDL_RenderDrawLine(renderer, (int)m_vertices[0].x, (int)m_vertices[0].y, (int)m_vertices[1].x, (int)m_vertices[1].y);
 
 		// adjacent - red
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-		SDL_RenderDrawLine(renderer, m_vertices[1].x, m_vertices[1].y, m_vertices[2].x, m_vertices[2].y);
+		SDL_RenderDrawLine(renderer, (int)m_vertices[1].x, (int)m_vertices[1].y, (int)m_vertices[2].x, (int)m_vertices[2].y);
 
 		// opposite - green
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-		SDL_RenderDrawLine(renderer, m_vertices[2].x, m_vertices[2].y, m_vertices[0].x, m_vertices[0].y);
+		SDL_RenderDrawLine(renderer, (int)m_vertices[2].x, (int)m_vertices[2].y, (int)m_vertices[0].x, (int)m_vertices[0].y);
 	}
 };
 
 
 void Restart(const UI::Options& opt, Cube* cube, Triangle& floor, Rect* wall)
 {
-	floor = Triangle({ 10, SCREEN_HEIGHT + (opt.angle > 40 ? opt.angle : -10) }, { SCREEN_WIDTH - (opt.angle > 30 ? 7 * opt.angle : 20), SCREEN_HEIGHT + (opt.angle > 40 ? opt.angle : -10) }, opt.angle);
+	floor = Triangle({ 10, SCREEN_HEIGHT - 10 }, { SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10 }, opt.angle);
 	floor.Update();
 
 	wall->m_start = { floor.m_vertices[1].x, 0 };
 	wall->m_end = { floor.m_vertices[1].x, SCREEN_HEIGHT };
 
-	cube->vel = { opt.vel, 0 };
+	cube->vel = opt.vel * -10.f;
 	cube->angle = opt.angle;
 	cube->frictionCoeff = opt.friction;
 	cube->mass = opt.mass;
@@ -138,7 +138,7 @@ int main(int argc, char* args[])
 	UI::Init(window, renderer);
 
 	float angle = 30;
-	Triangle floor({ 10, SCREEN_HEIGHT + (angle > 40 ? angle : -10) }, { SCREEN_WIDTH - (angle > 30 ? 7 * angle : 20), SCREEN_HEIGHT + (angle > 40 ? angle : -10) }, angle);
+	Triangle floor({ 10, SCREEN_HEIGHT - 10 }, { SCREEN_WIDTH - 20, SCREEN_HEIGHT - 10 }, angle);
 
 	// main cube
 	Cube cube(renderer, {0, 0}, angle);
@@ -147,15 +147,15 @@ int main(int argc, char* args[])
 
 	cube.mass = 1;
 
-	cube.vel = { 50.f, 0 };
+	cube.vel = -500.f;
 	
-	cube.frictionCoeff = 0.1;
+	cube.frictionCoeff = 0.1f;
 
 	UI::Options options;
 
 	options.angle = angle;
 	options.mass = cube.mass;
-	options.vel = cube.vel.x;
+	options.vel = cube.vel / -10.f;
 	options.friction = cube.frictionCoeff;
 
 	Rect wall = { {floor.m_vertices[1].x, 0}, {floor.m_vertices[1].x, SCREEN_HEIGHT}};
@@ -196,21 +196,17 @@ int main(int argc, char* args[])
 
 			if (CheckCollision(renderer, cube.vertices, 4, wall.m_vertices, 4))
 			{
-				cube.vel.x *= -1;
-				/*
-				//float e = (cube.mass * (cube.vel.x * cube.vel.x)) / 2;	
+				cube.vel *= -1;
+				Vec2 delta = cube.pos - cube.prev_pos;
 
-				//double v_after = sqrt(v_x_after * v_x_after + v_y_after * v_y_after);
-				//float v = sqrt((sinf(a) - cube.frictionCoeff * cosf(a)) / (sinf(a) + cube.frictionCoeff * cosf(a)));
-
-				//cube.vel.x = cube.vel.x * v;
-				*/
+				cube.pos -= delta;
+				cube.center -= delta;
 			}
 
 			// wall on the left
 			if (CheckCollision(renderer, cube.vertices, 4, wall2.m_vertices, 4))
 			{
-				cube.vel.x *= -1;
+				cube.vel *= -1;
 			}
 
 

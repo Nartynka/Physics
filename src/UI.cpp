@@ -63,7 +63,7 @@ void UI::DrawMenu(UI::Options* outOptions, std::function<void()> callback)
 	static float friction = outOptions->friction;
 
 	static float a_min = 10.f;
-	static float a_max = 50.f;
+	static float a_max = 45.f;
 
 	static float v_min = 0.f;
 	static float v_max = 100.f;
@@ -72,7 +72,7 @@ void UI::DrawMenu(UI::Options* outOptions, std::function<void()> callback)
 	static float m_max = 20.f;
 
 	static float f_min = 0.f;
-	static float f_max = 5.f;
+	static float f_max = 1.f;
 
 	ImGui::PushItemWidth(12.f * ImGui::GetFontSize());
 
@@ -142,10 +142,10 @@ void UI::DrawStats(const Cube* cube)
 	ImGui::SeparatorText("Stats:");
 
 	ImGui::Text("velocity:");
-	ImGui::Text("x: %f, y: %f", cube->vel.x, cube->vel.y);
+	ImGui::Text("x: %f", cube->vel);
 
 	ImGui::Text("acceleration:");
-	ImGui::Text("x: %f, y: %f", cube->acc.x, cube->acc.y);
+	ImGui::Text("x: %f", cube->acc);
 
 	ImGui::Text("gravity: %f", cube->gravity);
 	ImGui::Text("friction: %f", cube->frictionCoeff);

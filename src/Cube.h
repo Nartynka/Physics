@@ -27,18 +27,17 @@ public:
 	float gravity = 9.81f;
 	float angle = 0.f;
 	float mass = 100.f; // kg
+	float frictionCoeff = 0.01f;
 
+	//Vec2 vel = {0.f, 0.f};
+	//Vec2 acc = { 0.f, 0 };
 
-	double frictionCoeff = 0.01;
-	Vec2 vel = {0.f, 0.f};
-	Vec2 acc = { 0.f, 0 };
+	float vel = 0.f;
+	float acc = 0.f;
 
 	Vec2 prev_pos = { 0.f, 0.f };
 
 	Vec2 center;
-	bool shouldStop = false;
-	bool isOnSlope = false;
-	bool isGoingUp = true;
 
 	Cube(SDL_Renderer* renderer, const Vec2& pos, float angle);
 	~Cube();
@@ -47,8 +46,6 @@ public:
 	void Move(float dt);
 	void Update();
 	void AlignToFloor(Vec2 floor_vertex);
-
-	//void Restart();
 
 };
 

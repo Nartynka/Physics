@@ -40,58 +40,37 @@ void Cube::Move(float dt)
 {
 	forward = { cosf(Deg2Radf(angle)), sinf(Deg2Radf(angle)) };
 	up = { forward.y, -forward.x };
-	//up = { sinf(Deg2Radf(angle)), -cosf(Deg2Radf(angle)) };
 
 	// Apply acceleration to velocity
-	acc.x = mass * gravity * sinf(Deg2Radf(angle));
-	vel.x += acc.x;
-	/*
-	float a_g = gravity * sinf(Deg2Rad(angle)); // gravitional acc 
-	float a_f = frictionCoeff * gravity * cosf(Deg2Rad(angle)); // friction acc?
-
-	acc.x = (a_g + (vel.x > 0 ? -a_f : a_f)); // add or sub friction acc
-
-	vel.x += acc.x * dt; // apply acc
-
-	//float l = vel.x * vel.x / (2 * gravity * (sinf(a) + mu * cosf(a)));
-	//double v_down = sqrt(2 * gravity * l * (sinf(a) - mu * cosf(a)));
-	//vel.x += v_down * cosf(a) * dt;
-
-	//double theta = Deg2Radf(angle);
-
-	//float a = gravity * sin(theta) - frictionCoeff * gravity * cos(theta); // przyspieszenie w dó³
-	*/
+	acc = mass * gravity * sinf(Deg2Radf(angle));
+	vel += acc;
 	
 	if (frictionCoeff != 0)
 	{
 		// Apply friction
 		float normalForce = mass * gravity * cosf(Deg2Radf(angle));
-		double frictionForce = frictionCoeff * normalForce;  // Friction force
-		double frictionAcc = frictionForce / mass;  // Convert force to acceleration
+		float frictionForce = frictionCoeff * normalForce;  // Friction force
+		float frictionAcc = frictionForce / mass;  // Convert force to acceleration
 	
 		// Apply friction acceleration (opposes movement)
-		if (vel.x > 0) vel.x -= frictionAcc;
-		else if (vel.x < 0) vel.x += frictionAcc;
+		if (vel > 0) vel -= frictionAcc;
+		else if (vel < 0) vel += frictionAcc;
 	
-		if (vel.y > 0) vel.y -= frictionAcc;
-		else if (vel.y < 0) vel.y += frictionAcc;
+		if (vel > 0) vel -= frictionAcc;
+		else if (vel < 0) vel += frictionAcc;
 	
 		// Prevent jittering (stop when very slow)
-		if (fabs(vel.x) < 0.1f) vel.x = 0;
-		if (fabs(vel.y) < 0.1f) vel.y = 0;
+		if (fabs(vel) < 0.1f) vel = 0;
+		if (fabs(vel) < 0.1f) vel = 0;
 	}
-	
-	
+
 	prev_pos = pos;
 
-	//pos.x += forward.x * vel.x * dt + up.x * vel.y * dt;
-	//pos.y += forward.y * vel.x * dt + up.y * vel.y * dt;
+	pos.x += vel * cosf(Deg2Radf(angle)) * dt;
+	pos.y += vel * sinf(Deg2Radf(angle)) * dt;
 
-	pos.x += vel.x * cosf(Deg2Radf(angle)) * dt - vel.y * sinf(Deg2Radf(angle)) * dt;
-	pos.y += vel.x * sinf(Deg2Radf(angle)) * dt + up.y * vel.y * cosf(Deg2Radf(angle)) * dt;
-
-	center.x += vel.x * cosf(Deg2Radf(angle)) * dt - vel.y * sinf(Deg2Radf(angle)) * dt;
-	center.y += vel.x * sinf(Deg2Radf(angle)) * dt + up.y * vel.y * cosf(Deg2Radf(angle)) * dt;
+	center.x += vel * cosf(Deg2Radf(angle)) * dt;
+	center.y += vel * sinf(Deg2Radf(angle)) * dt;
 
 	Update();
 }
@@ -125,7 +104,7 @@ void Cube::AlignToFloor(Vec2 floor_vertex)
 	rotatedOffset.x = localOffset.x * cosf(Deg2Radf(angle)) - localOffset.y * sinf(Deg2Radf(angle));
 	rotatedOffset.y = localOffset.x * sinf(Deg2Radf(angle)) + localOffset.y * cosf(Deg2Radf(angle));
 	
-	Vec2 upOffset = { -700.f, -700.f };
+	Vec2 upOffset = { -64.f, -64.f };
 	// calculate new center position so that the contact vertex will touch the floor
 	center = floor_vertex - rotatedOffset + (forward * upOffset);
 	// pos is unrotated cube position so we sub the unrotated offset
@@ -138,45 +117,31 @@ void Cube::AlignToFloor(Vec2 floor_vertex)
 	original_vertices[3] = { center.x - localOffset.x, center.y + localOffset.y };
 }
 
-//void Cube::Restart()
-//{
-//	start_pos = pos;
-//	center = { pos.x + size.x / 2.f, pos.y + size.y / 2.f };
-//
-//	original_vertices[0] = { center.x - size.x / 2, center.y - size.y / 2 };
-//	original_vertices[1] = { center.x + size.x / 2, center.y - size.y / 2 };
-//	original_vertices[2] = { center.x + size.x / 2, center.y + size.y / 2 };
-//	original_vertices[3] = { center.x - size.x / 2, center.y + size.y / 2 };
-//
-//
-//	Update();
-//}
-
 void Cube::Render(SDL_Renderer* renderer)
 {
 	sprite->Render(renderer, pos, angle, true);
 
 	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-	SDL_RenderDrawLine(renderer, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
-	SDL_RenderDrawLine(renderer, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
-	SDL_RenderDrawLine(renderer, vertices[2].x, vertices[2].y, vertices[3].x, vertices[3].y);
-	SDL_RenderDrawLine(renderer, vertices[3].x, vertices[3].y, vertices[0].x, vertices[0].y);
+	SDL_RenderDrawLine(renderer, (int)vertices[0].x, (int)vertices[0].y, (int)vertices[1].x, (int)vertices[1].y);
+	SDL_RenderDrawLine(renderer, (int)vertices[1].x, (int)vertices[1].y, (int)vertices[2].x, (int)vertices[2].y);
+	SDL_RenderDrawLine(renderer, (int)vertices[2].x, (int)vertices[2].y, (int)vertices[3].x, (int)vertices[3].y);
+	SDL_RenderDrawLine(renderer, (int)vertices[3].x, (int)vertices[3].y, (int)vertices[0].x, (int)vertices[0].y);
 
 	SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-	SDL_Rect a = { center.x, center.y, 10, 10 };
+	SDL_Rect a = { (int)center.x, (int)center.y, 10, 10 };
 	SDL_RenderDrawRect(renderer, &a);
 
 	SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-	SDL_Rect b = { pos.x, pos.y, 5, 5 };
+	SDL_Rect b = { (int)pos.x, (int)pos.y, 5, 5 };
 	SDL_RenderDrawRect(renderer, &b);
 
 	// Forward vector
 	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-	SDL_RenderDrawLine(renderer, center.x + forward.x, center.y + forward.y, center.x + forward.x * 100, center.y + forward.y * 100);
+	SDL_RenderDrawLine(renderer, (int)(center.x + forward.x), (int)(center.y + forward.y), (int)(center.x + forward.x * 100), (int)(center.y + forward.y * 100));
 	
 	// Up vector
 	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-	SDL_RenderDrawLine(renderer, center.x + up.x, center.y + up.y, center.x + up.x * 100, center.y + up.y * 100);
+	SDL_RenderDrawLine(renderer, (int)(center.x + up.x), (int)(center.y + up.y), (int)(center.x + up.x * 100), (int)(center.y + up.y* 100));
 
 	//SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 	//Vec2 forward2 = { cosf(Deg2Radf(angle)), sinf(Deg2Radf(angle)) };
